@@ -1,5 +1,4 @@
 ckpt/
 logdir/
-images/predict/
-images/work/
-images/_backup/
+images/
+*.bmp
