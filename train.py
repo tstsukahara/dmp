@@ -21,14 +21,14 @@ TRAIN_IMG_BASE_DIR = './images/train_28/' # 訓練データ格納ディレクト
 # データ取得
 def get_train_data(data_dir):
     # 画像のあるディレクトリ
-    train_img_dirs = ['0_nemu', '1_risa', '2_mirin', '3_ei', '4_pin', '5_moga']
+    img_dirs = ['0_nemu', '1_risa', '2_mirin', '3_ei', '4_pin', '5_moga']
 
     # 学習画像データ
     train_image = []
     # 学習データのラベル
     train_label = []
 
-    for i, d in enumerate(train_img_dirs):
+    for i, d in enumerate(img_dirs):
         # ./images/以下の各ディレクトリ内のファイル名取得
         files = os.listdir(data_dir + '/' + d)
         for f in files:
@@ -55,6 +55,26 @@ def get_train_data(data_dir):
 
     return train_image, train_label
 
+
+# 学習結果を可視化
+def visualize_weight_data(step, w1, c1, p1, w2, c2, p2):
+    # print('w1.shape=%s' % str(w1.shape))
+    visualize.visualize_weights_1('step_%d_w1' % step, w1)
+
+    # print('c1.shape=%s' % str(c1.shape))
+    visualize.visualize_conv_1('step_%d_c1' % step, c1)
+
+    # print('p1.shape=%s' % str(p1.shape))
+    visualize.visualize_pool_1('step_%d_p1' % step, p1)
+
+    # print('w2.shape=%s' % str(w2.shape))
+    visualize.visualize_weights_2('step_%d_w2' % step, w2)
+
+    # print('c2.shape=%s' % str(c2.shape))
+    visualize.visualize_conv_2('step_%d_c2' % step, c2)
+
+    # print('p2.shape=%s' % str(p2.shape))
+    visualize.visualize_pool_2('step_%d_p2' % step, p2)
 
 
 ############ TensorFlow Graph
@@ -118,7 +138,6 @@ y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
 keep_prob = tf.placeholder(tf.float32)
 
 # Train and Evaluate the Model
-# weight1, weight2, hpool1, hpool2, y_conv = inference(x, keep_prob)
 wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv = inference(x, keep_prob)
 cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
@@ -145,7 +164,8 @@ with tf.Session() as sess:
                 train_image_batch.append(train_image[random_seq[batch + k]])
                 train_label_batch.append(train_label[random_seq[batch + k]])
 
-        _, w1, c1, p1, w2, c2, p2, w3, fc, yconv = sess.run([train_step, wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv], feed_dict={x: train_image_batch, y_: train_label_batch, keep_prob: 0.5})
+        _, w1, c1, p1, w2, c2, p2, w3, fc, yconv = sess.run([train_step, wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv],
+            feed_dict={x: train_image_batch, y_: train_label_batch, keep_prob: 0.5})
 
         # 学習データに対する正答率を表示
         if i % 1 == 0:
@@ -153,25 +173,8 @@ with tf.Session() as sess:
               x:train_image, y_: train_label, keep_prob: 1.0})
             print("step %d, training accuracy %g"%(i, train_accuracy))
 
+    # 学習結果を可視化
+    visualize_weight_data(i, w1, c1, p1, w2, c2, p2)
+
     # 学習結果をsave
     saver.save(sess, './ckpt/train.ckpt')
-
-
-############ 学習結果を可視化
-print('w1.shape=%s' % str(w1.shape))
-visualize.visualize_weights_1('w1', w1)
-
-print('c1.shape=%s' % str(c1.shape))
-visualize.visualize_conv_1('c1', c1)
-
-print('p1.shape=%s' % str(p1.shape))
-visualize.visualize_pool_1('p1', p1)
-
-print('w2.shape=%s' % str(w2.shape))
-visualize.visualize_weights_2('w2', w2)
-
-print('c2.shape=%s' % str(c2.shape))
-visualize.visualize_conv_2('c2', c2)
-
-print('p2.shape=%s' % str(p2.shape))
-visualize.visualize_pool_2('p2', p2)

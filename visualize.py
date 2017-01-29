@@ -37,7 +37,7 @@ def visualize_weights_1(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'RGB').save(fp, format='bmp')
 
@@ -76,7 +76,7 @@ def visualize_conv_1(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'L').save(fp, format='bmp')
 
@@ -116,7 +116,7 @@ def visualize_pool_1(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'L').save(fp, format='bmp')
 
@@ -155,7 +155,7 @@ def visualize_weights_2(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'L').save(fp, format='bmp')
 
@@ -194,7 +194,7 @@ def visualize_conv_2(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'L').save(fp, format='bmp')
 
@@ -234,7 +234,7 @@ def visualize_pool_2(name, weights_data):
             rows = np.vstack((rows, row))
 
     # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
+    file_path = os.path.join('./output_bmp', name) + '.bmp'
     with open(file_path, mode='wb') as fp:
         Image.fromarray(rows, 'L').save(fp, format='bmp')
 

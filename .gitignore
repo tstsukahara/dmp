@@ -2,3 +2,4 @@ ckpt/
 logdir/
 images/
 *.bmp
+*.jpg
