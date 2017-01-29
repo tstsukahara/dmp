@@ -1,19 +1,21 @@
+# -*- coding: utf-8 -*-
 
 import os
 import numpy as np
 import cv2
 import random
 import math
-from PIL import Image
 import tensorflow as tf
+import visualize
 
 ############ 定数
 NUM_CLASSES = 6 # 分類するクラス数
 IMG_SIZE = 28 # 画像の1辺の長さ
 COLOR_CHANNELS = 3 # RGB
 IMG_PIXELS = IMG_SIZE * IMG_SIZE * COLOR_CHANNELS # 画像のサイズ*RGB
-STEPS = 10 # 学習ステップ数
+STEPS = 300 # 学習ステップ数
 BATCH_SIZE = 50 # バッチサイズ
+TRAIN_IMG_BASE_DIR = './images/train_28/' # 訓練データ格納ディレクトリ
 
 ############ Functions
 # データ取得
@@ -34,7 +36,7 @@ def get_train_data(data_dir):
             path, ext = os.path.splitext(f)
             if ext != ".jpg":
                 continue
-            img = cv2.imread('./images/train_28/' + d + '/' + f)
+            img = cv2.imread(TRAIN_IMG_BASE_DIR + d + '/' + f)
             # img = cv2.imread('./images/train/' + d + '/' + f)
             # 1辺がIMG_SIZEの正方形にリサイズ
             img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
@@ -53,227 +55,6 @@ def get_train_data(data_dir):
 
     return train_image, train_label
 
-# For Weights Visualization
-def visualize_weights_1(name, weights_data):
-    # 値を0-255に変換
-    x_min = np.amin(weights_data)
-    x_max = np.amax(weights_data)
-    weights_0_to_1 = (weights_data - x_min) / (x_max - x_min)
-    weights_0_to_255_uint8 = (weights_0_to_1 * 255).astype(np.uint8)
-
-    # 転置 (5, 5, 3, 32) -> (32, 5, 5, 3)
-    image_data = np.transpose(weights_0_to_255_uint8, [3, 0, 1, 2])
-    print(image_data.shape)
-
-    # 画像に1pxの枠線を追加し、1画像ずつリストに格納
-    list = []
-    for data in image_data:
-        data = np.pad(data, pad_width=((1, 1), (1, 1), (0, 0)),
-                  mode='constant', constant_values=0)
-        list.append(data)
-    print(data.shape)
-    print('len(list)=%s' % len(list))
-
-    # 64個のフィルターをグリッドに整形
-    rows = None
-    grid_size_height = 4
-    grid_size_width = 8
-    for index in range(grid_size_height):
-        start = index * grid_size_width
-        end = start + grid_size_width
-        row = np.hstack(list[start:end])
-        print(row.shape)
-        if rows is None:
-            rows = row
-        else:
-            rows = np.vstack((rows, row))
-            print(rows.shape)
-
-    # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
-    with open(file_path, mode='wb') as fp:
-        Image.fromarray(rows, 'RGB').save(fp, format='bmp')
-
-
-def visualize_conv_1(name, weights_data):
-    # 値を0-255に変換
-    x_min = np.amin(weights_data)
-    x_max = np.amax(weights_data)
-    weights_0_to_1 = (weights_data - x_min) / (x_max - x_min)
-    weights_0_to_255_uint8 = (weights_0_to_1 * 255).astype(np.uint8)
-
-    # 転置 (50, 28, 28, 32) -> (50, 32, 28, 28)
-    image_data = np.transpose(weights_0_to_255_uint8, [0, 3, 1, 2])
-    print(image_data.shape)
-
-    # 1チャネルにreshapeする (50, 28, 28, 32) -> (50*32, 28, 28)
-    image_data = np.reshape(image_data, (50*32, 28, 28))
-    print(image_data.shape)
-
-    # 画像に1pxの枠線を追加し、1画像ずつリストに格納
-    list = []
-    for data in image_data:
-        data = np.pad(data, pad_width=((1, 1), (1, 1)),
-                  mode='constant', constant_values=0)
-        list.append(data)
-    print(data.shape)
-    print('len(list)=%s' % len(list))
-
-    # 50*32個のフィルターをグリッドに整形
-    rows = None
-    grid_size_height = 40
-    grid_size_width = 40
-    for index in range(grid_size_height):
-        start = index * grid_size_width
-        end = start + grid_size_width
-        row = np.hstack(list[start:end])
-        print(row.shape)
-        if rows is None:
-            rows = row
-        else:
-            rows = np.vstack((rows, row))
-            print(rows.shape)
-
-    # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
-    with open(file_path, mode='wb') as fp:
-        Image.fromarray(rows, 'L').save(fp, format='bmp')
-
-
-
-def visualize_pool_1(name, weights_data):
-    # 値を0-255に変換
-    x_min = np.amin(weights_data)
-    x_max = np.amax(weights_data)
-    weights_0_to_1 = (weights_data - x_min) / (x_max - x_min)
-    weights_0_to_255_uint8 = (weights_0_to_1 * 255).astype(np.uint8)
-
-    # 転置 (50, 14, 14, 32) -> (50, 32, 14, 14)
-    image_data = np.transpose(weights_0_to_255_uint8, [0, 3, 1, 2])
-    print("fugafuga")
-    print(image_data.shape)
-
-    # 1チャネルにreshapeする (50, 32, 14, 14) -> (50*32, 14, 14)
-    image_data = np.reshape(image_data, (50*32, 14, 14))
-    print(image_data.shape)
-
-    # 画像に1pxの枠線を追加し、1画像ずつリストに格納
-    list = []
-    for data in image_data:
-        data = np.pad(data, pad_width=((1, 1), (1, 1)),
-                  mode='constant', constant_values=0)
-        list.append(data)
-    print(data.shape)
-    print('len(list)=%s' % len(list))
-
-    # 50*32個のフィルターをグリッドに整形
-    rows = None
-    grid_size_height = 40
-    grid_size_width = 40
-    for index in range(grid_size_height):
-        start = index * grid_size_width
-        end = start + grid_size_width
-        row = np.hstack(list[start:end])
-        print(row.shape)
-        if rows is None:
-            rows = row
-        else:
-            rows = np.vstack((rows, row))
-            print(rows.shape)
-
-    # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
-    with open(file_path, mode='wb') as fp:
-        Image.fromarray(rows, 'L').save(fp, format='bmp')
-
-
-def visualize_weights_2(name, weights_data):
-    # 値を0-255に変換
-    x_min = np.amin(weights_data)
-    x_max = np.amax(weights_data)
-    weights_0_to_1 = (weights_data - x_min) / (x_max - x_min)
-    weights_0_to_255_uint8 = (weights_0_to_1 * 255).astype(np.uint8)
-
-    # 転置 (5, 5, 32, 64) -> (64, 32, 5, 5)
-    image_data = np.transpose(weights_0_to_255_uint8, [3, 2, 0, 1])
-
-    # 1チャネルにreshapeする (64, 5, 5, 32) -> (64*32, 5, 5)
-    image_data = np.reshape(image_data, (64*32, 5, 5))
-    print(image_data.shape)
-
-    # 画像に1pxの枠線を追加し、1画像ずつリストに格納
-    list = []
-    for data in image_data:
-        data = np.pad(data, pad_width=((1, 1), (1, 1)),
-                  mode='constant', constant_values=0)
-        list.append(data)
-    print(data.shape)
-    print('len(list)=%s' % len(list))
-
-    # 64*32個のフィルターをグリッドに整形
-    rows = None
-    grid_size_height = 64
-    grid_size_width = 32
-    for index in range(grid_size_height):
-        start = index * grid_size_width
-        end = start + grid_size_width
-        row = np.hstack(list[start:end])
-        print(row.shape)
-        if rows is None:
-            rows = row
-        else:
-            rows = np.vstack((rows, row))
-            print(rows.shape)
-
-    # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
-    with open(file_path, mode='wb') as fp:
-        Image.fromarray(rows, 'L').save(fp, format='bmp')
-
-
-def visualize_conv_2(name, weights_data):
-    # 値を0-255に変換
-    x_min = np.amin(weights_data)
-    x_max = np.amax(weights_data)
-    weights_0_to_1 = (weights_data - x_min) / (x_max - x_min)
-    weights_0_to_255_uint8 = (weights_0_to_1 * 255).astype(np.uint8)
-
-    # 転置 (50, 14, 14, 64) -> (50, 64, 14, 14)
-    image_data = np.transpose(weights_0_to_255_uint8, [0, 3, 1, 2])
-    print(image_data.shape)
-
-    # 1チャネルにreshapeする (50, 64, 14, 14) -> (50*64, 14, 14)
-    image_data = np.reshape(image_data, (50*64, 14, 14))
-    print(image_data.shape)
-
-    # 画像に1pxの枠線を追加し、1画像ずつリストに格納
-    list = []
-    for data in image_data:
-        data = np.pad(data, pad_width=((1, 1), (1, 1)),
-                  mode='constant', constant_values=0)
-        list.append(data)
-    print(data.shape)
-    print('len(list)=%s' % len(list))
-
-    # 50*64個のフィルターをグリッドに整形
-    rows = None
-    grid_size_height = 64
-    grid_size_width = 50
-    for index in range(grid_size_height):
-        start = index * grid_size_width
-        end = start + grid_size_width
-        row = np.hstack(list[start:end])
-        print(row.shape)
-        if rows is None:
-            rows = row
-        else:
-            rows = np.vstack((rows, row))
-            print(rows.shape)
-
-    # bmpファイルとして出力
-    file_path = os.path.join(name) + '.bmp'
-    with open(file_path, mode='wb') as fp:
-        Image.fromarray(rows, 'L').save(fp, format='bmp')
 
 
 ############ TensorFlow Graph
@@ -351,8 +132,7 @@ with tf.Session() as sess:
     saver = tf.train.Saver()
     sess.run(init_op)
 
-    train_image, train_label = get_train_data('./images/train_28/')
-    # train_image, train_label = get_train_data('./images/train/')
+    train_image, train_label = get_train_data(TRAIN_IMG_BASE_DIR)
 
     for i in range(STEPS):
         random_seq = list(range(len(train_image)))
@@ -378,17 +158,20 @@ with tf.Session() as sess:
 
 
 ############ 学習結果を可視化
-print(w1.shape)
-visualize_weights_1('w1', w1)
+print('w1.shape=%s' % str(w1.shape))
+visualize.visualize_weights_1('w1', w1)
 
-print(c1.shape)
-visualize_conv_1('c1', c1)
+print('c1.shape=%s' % str(c1.shape))
+visualize.visualize_conv_1('c1', c1)
 
-print(p1.shape)
-visualize_pool_1('p1', p1)
+print('p1.shape=%s' % str(p1.shape))
+visualize.visualize_pool_1('p1', p1)
 
-print(w2.shape)
-visualize_weights_2('w2', w2)
+print('w2.shape=%s' % str(w2.shape))
+visualize.visualize_weights_2('w2', w2)
 
-print(c2.shape)
-visualize_conv_2('c2', c2)
+print('c2.shape=%s' % str(c2.shape))
+visualize.visualize_conv_2('c2', c2)
+
+print('p2.shape=%s' % str(p2.shape))
+visualize.visualize_pool_2('p2', p2)
