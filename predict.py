@@ -14,6 +14,7 @@ NUM_CLASSES = 6 # 分類するクラス数
 IMG_SIZE = 28 # 画像の1辺の長さ
 COLOR_CHANNELS = 3 # RGB
 IMG_PIXELS = IMG_SIZE * IMG_SIZE * COLOR_CHANNELS # 画像のサイズ*RGB
+CKPT_FILE = "./ckpt/train.ckpt"
 
 ############ Functions
 # データ取得
@@ -147,7 +148,7 @@ def predict(data_dir):
     ############ Session Start
     with tf.Session() as sess:
         saver = tf.train.Saver()
-        saver.restore(sess, "./ckpt/train.ckpt")
+        saver.restore(sess, CKPT_FILE)
 
 
         # predict
@@ -173,7 +174,7 @@ def test(data_dir):
     ############ Session Start
     with tf.Session() as sess:
         saver = tf.train.Saver()
-        saver.restore(sess, "./ckpt/train.ckpt")
+        saver.restore(sess, CKPT_FILE)
 
         # test
         test_image = get_test_data(data_dir)

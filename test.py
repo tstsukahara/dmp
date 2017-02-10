@@ -15,11 +15,15 @@ def main():
     file_path = argvs[1]
     path_face_trim, trim_faces = facedetect.trim_face(file_path)
 
+    if len(trim_faces) == 0:
+        print('No face has detected.')
+        quit()
+
     # 分類モデルに顔画像を投入する
     answer = predict.test(path_face_trim)
 
     # 結果を元画像に埋め込んで表示する
-    detect_file = facedetect.detect_face(file_path, answer)
+    detect_file = facedetect.display_face(file_path, answer, trim_faces)
     os.system('open %s' % detect_file)
 
 

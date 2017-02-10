@@ -3,6 +3,13 @@ import sys
 import os
 import shutil
 
+NEMU = 0
+RISA = 1
+MIRIN = 2
+EI = 3
+PIN = 4
+MOGA = 5
+
 def main():
     # イメージファイル一覧を取得する
     filedir= "/Users/tsuyoshi/Desktop/dmp"
@@ -17,19 +24,70 @@ def main():
             # trim_face("%s/%s" % (filedir, file))
 
 def set_format(name):
-    if name == 'nemu':
-        text = name
+    if name == NEMU:
+        text = 'nemu'
         color = (213, 222, 180)
-    elif name == 'risa':
-        text = name
+    elif name == RISA:
+        text = 'risa'
         color = (222, 222, 222)
-    elif name == 'risa':
-        text = name
-        color = (222, 222, 222)
+    elif name == MIRIN:
+        text = 'mirin'
+        color = (100, 100, 255)
+    elif name == EI:
+        text = 'ei'
+        color = (50, 230, 230)
+    elif name == PIN:
+        text = 'pin'
+        color = (220, 130, 50)
+    elif name == MOGA:
+        text = 'moga'
+        color = (210, 125, 170)
+    else:
+        text = 'none'
+        color = (0, 0, 0)
 
     return text, color
 
-def detect_face(image_file, label):
+def display_face(image_file, label, face_list):
+    # ファイルパス取得
+    path = os.path.dirname(image_file)
+    name, _ = os.path.splitext( os.path.basename(image_file))
+
+    # 画像の読み込み
+    image = cv2.imread(image_file)
+
+    #ディレクトリの作成
+    if len(face_list) > 0:
+        path_face_rect = path + '/face_rect'
+        if os.path.isdir(path_face_rect):
+            shutil.rmtree(path_face_rect)
+            os.mkdir(path_face_rect)
+        else:
+            os.mkdir(path_face_rect)
+
+    rect_image_path = ''
+    if len(face_list) > 0:
+        # 認識した部分を囲む
+        i = 0
+        for face in face_list:
+            x,y,w,h = face
+            text, color = set_format(label[i])
+            # 枠を作成する
+            cv2.rectangle(image, (x,y), (x+w, y+h), color, thickness=2)
+            # cv2.putText(画像, 文字, 左下座標, フォント, 文字の大きさ, 色, 文字の太さ, 線の種類)
+            cv2.putText(image, text, (x,y-5), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2, 16)
+            i += 1
+
+        # 描画結果をファイルに書き込む
+        rect_image_path = path_face_rect + '/' + name + '_rect_' + '.png'
+        print("rect_image_path=%s" % rect_image_path)
+        cv2.imwrite(rect_image_path, image)
+    else:
+        print("no face")
+
+    return rect_image_path
+
+def detect_face(image_file):
     # ファイルパス取得
     path = os.path.dirname(image_file)
     name, _ = os.path.splitext( os.path.basename(image_file))
@@ -48,15 +106,16 @@ def detect_face(image_file, label):
     face_list = cascade.detectMultiScale(image_gs,
         scaleFactor=1.1,
         minNeighbors=1,
-        minSize=(150,150))
+        minSize=(100,100))
 
     #ディレクトリの作成
     if len(face_list) > 0:
-        path_face = path + '/face_rect'
-        if os.path.isdir(path_face):
-            pass
+        path_face_rect = path + '/face_rect'
+        if os.path.isdir(path_face_rect):
+            shutil.rmtree(path_face_rect)
+            os.mkdir(path_face_rect)
         else:
-            os.mkdir(path_face)
+            os.mkdir(path_face_rect)
 
     rect_image_path = ''
     if len(face_list) > 0:
@@ -64,8 +123,8 @@ def detect_face(image_file, label):
         i = 0
         for face in face_list:
             x,y,w,h = face
-            color = (150, 255, 220) # (B,G,R)
-            text = str(label[i])
+            color = (255, 255, 255) # (B,G,R)
+            text = 'none'
             # 枠を作成する
             cv2.rectangle(image, (x,y), (x+w, y+h), color, thickness=2)
             # cv2.putText(画像, 文字, 左下座標, フォント, 文字の大きさ, 色, 文字の太さ, 線の種類)
@@ -73,7 +132,7 @@ def detect_face(image_file, label):
             i += 1
 
         # 描画結果をファイルに書き込む
-        rect_image_path = path_face + '/' + name + '_rect_' + '.png'
+        rect_image_path = path_face_rect + '/' + name + '_rect_' + '.png'
         print("rect_image_path=%s" % rect_image_path)
         cv2.imwrite(rect_image_path, image)
     else:
@@ -100,7 +159,7 @@ def trim_face(image_file):
     face_list = cascade.detectMultiScale(image_gs,
         scaleFactor=1.1,
         minNeighbors=1,
-        minSize=(150,150))
+        minSize=(100,100))
 
     path_face_trim = ''
     #ディレクトリの作成
