@@ -139,7 +139,8 @@ keep_prob = tf.placeholder(tf.float32)
 
 # Train and Evaluate the Model
 wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv = inference(x, keep_prob)
-cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
+# cross_entropy = -tf.reduce_sum(y_ * tf.log(y_conv))
+cross_entropy = -tf.reduce_sum(y_ * tf.log(tf.clip_by_value(y_conv, 1e-10,1.0)))
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -173,8 +174,9 @@ with tf.Session() as sess:
               x:train_image, y_: train_label, keep_prob: 1.0})
             print("step %d, training accuracy %g"%(i, train_accuracy))
 
-    # 学習結果を可視化
-    visualize_weight_data(i, w1, c1, p1, w2, c2, p2)
+        if i % 299 == 0:
+            # 学習結果を可視化
+            visualize_weight_data(i, w1, c1, p1, w2, c2, p2)
 
     # 学習結果をsave
     saver.save(sess, './ckpt/train.ckpt')

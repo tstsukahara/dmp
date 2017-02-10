@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import numpy as np
 import cv2
 import random
@@ -13,10 +14,31 @@ NUM_CLASSES = 6 # 分類するクラス数
 IMG_SIZE = 28 # 画像の1辺の長さ
 COLOR_CHANNELS = 3 # RGB
 IMG_PIXELS = IMG_SIZE * IMG_SIZE * COLOR_CHANNELS # 画像のサイズ*RGB
-PREDICT_IMG_BASE_DIR = './images/predict_28/' # 訓練データ格納ディレクトリ
 
 ############ Functions
 # データ取得
+def get_test_data(data_dir):
+    # 学習画像データ
+    test_image = []
+    # ファイル名取得
+    files = os.listdir(data_dir)
+    for f in files:
+        # 画像読み込み
+        path, ext = os.path.splitext(f)
+        if ext != '.png' and ext != '.jpg':
+            continue
+        img = cv2.imread(data_dir + '/' + f)
+        # 1辺がIMG_SIZEの正方形にリサイズ
+        img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
+        # 1列にして
+        img = img.flatten().astype(np.float32)/255.0
+        test_image.append(img)
+
+    # numpy配列に変換
+    test_image = np.asarray(test_image)
+    return test_image
+
+
 def get_predict_data(data_dir):
     # 画像のあるディレクトリ
     img_dirs = ['0_nemu', '1_risa', '2_mirin', '3_ei', '4_pin', '5_moga']
@@ -34,8 +56,7 @@ def get_predict_data(data_dir):
             path, ext = os.path.splitext(f)
             if ext != ".jpg":
                 continue
-            img = cv2.imread(PREDICT_IMG_BASE_DIR + d + '/' + f)
-            # img = cv2.imread('./images/train/' + d + '/' + f)
+            img = cv2.imread(data_dir + '/' + d + '/' + f)
             # 1辺がIMG_SIZEの正方形にリサイズ
             img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
             # 1列にして
@@ -110,26 +131,62 @@ def inference(x, keep_prob):
 
     return W_conv1, h_conv1, h_pool1, W_conv2, h_conv2, h_pool2, W_fc1, h_fc1, y_conv
 
-# Placeholder
-x = tf.placeholder(tf.float32, shape=[None, IMG_PIXELS])
-y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
-keep_prob = tf.placeholder(tf.float32)
 
-# Predict
-wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv = inference(x, keep_prob)
-cross_entropy = -tf.reduce_sum(y_*tf.log(y_conv))
-# train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+def predict(data_dir):
+    # Placeholder
+    x = tf.placeholder(tf.float32, shape=[None, IMG_PIXELS])
+    y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
+    keep_prob = tf.placeholder(tf.float32)
 
-with tf.Session() as sess:
-    saver = tf.train.Saver()
-    saver.restore(sess, "./ckpt/train.ckpt")
+    # Predict
+    wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv = inference(x, keep_prob)
+    correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    answer = tf.argmax(y_conv,1)
 
-    predict_image, predict_label = get_predict_data(PREDICT_IMG_BASE_DIR)
+    ############ Session Start
+    with tf.Session() as sess:
+        saver = tf.train.Saver()
+        saver.restore(sess, "./ckpt/train.ckpt")
 
-    # w1, c1, p1, w2, c2, p2, w3, fc, yconv = sess.run([wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv], feed_dict={x: predict_image, y_: predict_label, keep_prob: 0.5})
 
-    predict_accuracy = accuracy.eval(feed_dict={
-      x:predict_image, y_: predict_label, keep_prob: 1.0})
-    print("predict accuracy %g" % predict_accuracy)
+        # predict
+        predict_image, predict_label = get_predict_data(data_dir)
+
+        w1, c1, p1, w2, c2, p2, w3, fc, yconv = sess.run([wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv], feed_dict={x: predict_image, y_: predict_label, keep_prob: 0.5})
+        predict_accuracy = accuracy.eval(feed_dict={
+          x:predict_image, y_: predict_label, keep_prob: 1.0})
+        print("predict accuracy %g" % predict_accuracy)
+
+def test(data_dir):
+    # Placeholder
+    x = tf.placeholder(tf.float32, shape=[None, IMG_PIXELS])
+    y_ = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES])
+    keep_prob = tf.placeholder(tf.float32)
+
+    # Predict
+    wconv1, hconv1, hpool1, wconv2, hconv2, hpool2, wfc1, hfc1, y_conv = inference(x, keep_prob)
+    correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    answer = tf.argmax(y_conv,1)
+
+    ############ Session Start
+    with tf.Session() as sess:
+        saver = tf.train.Saver()
+        saver.restore(sess, "./ckpt/train.ckpt")
+
+        # test
+        test_image = get_test_data(data_dir)
+        answer = answer.eval(feed_dict={x:test_image, keep_prob: 1.0})
+
+    return answer
+
+
+if __name__ == "__main__":
+    argvs = sys.argv
+    if (len(argvs) != 2):
+        print('Usage: # python %s <data_dir>' % argvs[0])
+        quit()
+
+    data_dir = argvs[1]
+    predict(data_dir)
