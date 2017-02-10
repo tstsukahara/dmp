@@ -1,5 +1,7 @@
-ckpt/
-logdir/
+_bak
+script/ckpt/
+script/logdir/
 images/
 *.bmp
 *.jpg
+*.png
